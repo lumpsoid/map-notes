@@ -3,6 +3,43 @@ let formOverlay;
 let notes = [];
 let currentMarker;
 
+
+function formCleaner() {  
+    document.getElementById('title').value = '';
+    document.getElementById('text').value = '';
+    document.getElementById('date').value = '';
+};
+
+function addNoteToList(noteId, newNote) {  
+    // Создание нового элемента списка заметок
+    const listItem = document.createElement('li');
+    listItem.id = noteId
+    listItem.classList.add('note-item');
+    
+    // Формирование текста заметки
+    const noteTitle = document.createElement('div');
+    noteTitle.classList.add('note-title');
+    noteTitle.innerHTML = newNote.title;
+    
+    const noteDate = document.createElement('div');
+    noteDate.classList.add('note-date');
+    noteDate.innerHTML = newNote.date;
+    
+    const noteText = document.createElement('div');
+    noteText.classList.add('note-text');
+    noteText.innerHTML = newNote.text;
+    
+    // Добавление текста заметки в элемент списка
+    listItem.append(noteDate, noteTitle, noteText);
+    
+    // Добавление элемента списка в список заметок
+    document.getElementById('notes-list').appendChild(listItem);
+};
+
+window.api.once('load-file', (event, jsonData) => {
+    console.log(jsonData)
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     formContainer = document.getElementById('form-container');
     formOverlay = document.getElementById('overlay');
@@ -27,8 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-
-
 window.api.receive('form-show-request', (event, position) => {
     formContainer.style.display = 'block';
     formOverlay.style.display = 'block';
@@ -50,13 +85,10 @@ document.getElementById('panel-btn').addEventListener('click', (event) => {
 });
 
 document.getElementById('overlay').addEventListener('click', (event) => {
-    const date = document.getElementById('date').value;
-    const name = document.getElementById('title').value;
-    const email = document.getElementById('text').value;
-    
     formContainer.style.display = 'none';
     formOverlay.style.display = 'none';
     currentMarker.remove()
+    formCleaner();
 });
 
 document.getElementById('map-note').addEventListener('submit', (event) => {
@@ -64,29 +96,41 @@ document.getElementById('map-note').addEventListener('submit', (event) => {
     const date = document.getElementById('date').value;
     const title = document.getElementById('title').value;
     const text = document.getElementById('text').value;
+    const timestamp = Date.now()
     
     const note = {
-        'date': date,
-        'title': title,
-        'text': text
-    }
+        date: date,
+        title: title,
+        text: text
+    };
 
-    notes.push(note)
+    addNoteToList(timestamp, note);
+    notes[timestamp] = note;
+
     formContainer.style.display = 'none';
     formOverlay.style.display = 'none';
+    formCleaner();
 });
 
 // Add event listener for Cancel button
 document.getElementById('cancel-button').addEventListener('click', () => {
     // Clear form fields
-    document.getElementById('title').value = '';
-    document.getElementById('text').value = '';
-    document.getElementById('date').value = '';
+    formCleaner();
     // Hide form container
     formContainer.style.display = 'none';
     formOverlay.style.display = 'none';
-    currentMarker.remove()
+    currentMarker.remove();
   });
+
+window.api.receive('notes-data-request', (event, content) => {
+    console.log(content)
+    if (content.request == "request") {
+        event.reply('notes-data', {request: 'data', data: notes})
+    } else {
+        console.log('Something wrong with request notes data.')
+    }
+});
+
 
 // document.getElementById('new-note-form').addEventListener('submit', function(event) {
 //     event.preventDefault();
