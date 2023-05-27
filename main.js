@@ -1,7 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path')
-let notes;
 
 let mainWindow;
 
@@ -27,14 +26,13 @@ function loadNotesAndSend() {
   });
 };
 
-function saveNotes() {
-  mainWindow.webContents.send('notes-data-request', {request: 'request'});
-
+function saveNotes(event, content) {
+  if (content.request != "save") return;
+  const notes = content.data;
   const notesFile = path.join(__dirname, 'notes.json')
-
   if (notesFile) {
       fs.writeFile(notesFile, JSON.stringify(notes), (err) => {
-          if (err) console.error(err);
+          if (err) console.log(err);
       });
   }
 }
@@ -73,18 +71,13 @@ ipcMain.on('show-form', (event, position) => {
 });
 
 ipcMain.on('notes-data', (event, content) => {
-  console.log(content)
   if (content.request == "data") {
-    notes = data;
+    notes = content.data;
   } else {
     console.log('Something wrong with notes-data get.');
   }
 });
 
 app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') {
-    // добавить функцию выгрузки заметок
-    saveNotes()
-    app.quit()
-  }
+  if (process.platform !== 'darwin') app.quit()
 })

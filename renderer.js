@@ -106,6 +106,7 @@ document.getElementById('map-note').addEventListener('submit', (event) => {
 
     addNoteToList(timestamp, note);
     notes[timestamp] = note;
+    console.log(notes)
 
     formContainer.style.display = 'none';
     formOverlay.style.display = 'none';
@@ -123,9 +124,9 @@ document.getElementById('cancel-button').addEventListener('click', () => {
   });
 
 window.api.receive('notes-data-request', (event, content) => {
-    console.log(content)
+    console.log(notes)
     if (content.request == "request") {
-        event.reply('notes-data', {request: 'data', data: notes})
+        window.api.send('notes-data', {request: 'data', data: notes});
     } else {
         console.log('Something wrong with request notes data.')
     }
