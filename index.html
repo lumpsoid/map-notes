@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Мой сайт с картой мира и заметками о поездках</title>
   <meta charset="UTF-8">
+  <title>Map Form</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
@@ -13,81 +13,41 @@
   <style>
     #map {
       width: 100%;
-      height: 800px; /* Измените высоту, если требуется больше места */
+      height: 800px;
+    }
+
+    #form-container {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      background-color: white;
+      padding: 20px;
+      z-index: 1000;
     }
   </style>
 </head>
 <body>
-  <h1>Мой сайт с картой мира и заметками о поездках</h1>
-  
   <div id="map"></div>
-  
-  <h2>Мои заметки о поездках</h2>
-  <ul id="notes-list"></ul>
-  
-  <h3>Создать новую заметку</h3>
-  <form id="new-note-form">
-    <label for="note-title">Заголовок:</label>
-    <input type="text" id="note-title" required>
-    <br>
-    <label for="note-date">Дата:</label>
-    <input type="date" id="note-date" required>
-    <br>
-    <label for="note-description">Описание:</label>
-    <textarea id="note-description" required></textarea>
-    <br>
-    <button type="submit">Создать заметку</button>
-  </form>
 
-  <script src="./renderer.js"></script>
-  
-  <script>
-    function initMap() {
-      // Инициализация и настройка карты
-      var map = L.map('map').setView([55, 40], 4); // Начальные координаты карты и масштаб
-      
-      // Добавление слоя тайлов карты
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-         maxZoom: 19,
-         attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      }).addTo(map);      
-      // Добавление обработчика события для нажатия на карту
-      map.on('click', function(event) {
-        var marker = L.marker(event.latlng).addTo(map);
-        // Дополнительные действия с маркером (например, сохранение или обработка данных)
+  <div id="form-container">
+    <h2>Заметка</h2>
+    <form id="map-form">
+      <label for="name">Дата:</label>
+      <input type="text" id="name" required>
+      <br>
+      <label for="name">Name:</label>
+      <input type="text" id="name" required>
+      <br>
+      <label for="email">Email:</label>
+      <input type="email" id="email" required>
+      <br>
+      <button type="submit">Submit</button>
+    </form>
+  </div>
 
-        // Пример вывода координат маркера в консоль
-        console.log('Новый маркер создан на координатах: ' + event.latlng.lat + ', ' + event.latlng.lng);
-      });    }
-    
-    // Добавление обработчика события для отправки формы создания заметки
-    document.getElementById('new-note-form').addEventListener('submit', function(event) {
-      event.preventDefault();
-      
-      // Получение значений полей формы
-      var title = document.getElementById('note-title').value;
-      var date = document.getElementById('note-date').value;
-      var description = document.getElementById('note-description').value;
-      
-      // Создание нового элемента списка заметок
-      var listItem = document.createElement('li');
-      
-      // Формирование текста заметки
-      var noteText = document.createElement('p');
-      noteText.innerHTML = '<strong>' + title + '</strong> - ' + date + '<br>' + description;
-      
-      // Добавление текста заметки в элемент списка
-      listItem.appendChild(noteText);
-      
-      // Добавление элемента списка в список заметок
-      document.getElementById('notes-list').appendChild(listItem);
-      
-      // Очистка полей формы
-      document.getElementById('note-title').value = '';
-      document.getElementById('note-date').value = '';
-      document.getElementById('note-description').value = '';
-    });
-    initMap()
-  </script>
+  <script src="renderer.js"></script>
 </body>
 </html>

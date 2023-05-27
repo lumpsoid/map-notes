@@ -34,6 +34,7 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
+  mainWindow.webContents.openDevTools();
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -48,7 +49,11 @@ app.whenReady().then(() => {
   })
 })
 
-ipcMain.on('save-note', saveNote)
+ipcMain.on('save-note', saveNote);
+
+ipcMain.on('show-form', (event, position) => {
+  event.reply('form-show-request', position);
+});
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit()

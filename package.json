@@ -11,5 +11,8 @@
   "license": "MIT",
   "devDependencies": {
     "electron": "^24.4.0"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4"
   }
 }
