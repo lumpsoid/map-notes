@@ -27,12 +27,62 @@
       padding: 20px;
       z-index: 1000;
     }
+
+    #overlay {
+      display: none;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: black;
+      opacity: 20%;
+      z-index: 1000;
+    }
+
+    #notes-panel {
+      position: absolute;
+      top: 0;
+      width: 500px;
+      height: 100%;
+      background-color: white;
+      box-sizing: border-box;
+      border: 1px solid black;
+      z-index: 1000;
+      transition-property: left;
+      transition-duration: 1s;
+    }
+
+    #panel-btn {
+      display: block;
+      position: absolute;
+      top: 50%;
+      right: -37px;
+      width: 35px;
+      height: 60px;
+      border-radius: 0 60px 60px 0;
+      background-color: white;
+      border: 1px solid black;
+      z-index: 1000;
+    }
+
+    #panel-btn::after {
+      content: ">";
+      position: absolute;
+      top: 35%;
+      left: 27%;
+    }
   </style>
 </head>
 <body>
+  <div id="overlay"></div>
+  
   <div id="map"></div>
 
+  <div id="notes-panel" style="left: -500px">
+    <div id="panel-btn"></div>
+  </div>
+
   <div id="form-container">
+    
     <h2>Заметка</h2>
     <form id="map-note">
       <label for="date">Дата:</label>
