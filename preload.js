@@ -9,16 +9,21 @@ contextBridge.exposeInMainWorld(
     "api", {
         send: (channel, data) => {
             // whitelist channels
-            let validChannels = ["save-note"];
+            let validChannels = ["save-note", 'show-form', 'notes-data'];
             if (validChannels.includes(channel)) {
                 ipcRenderer.send(channel, data);
             }
         },
-        receive: (channel, func) => {
-            let validChannels = ["save-note-reply"];
+        receive: (channel, data) => {
+            let validChannels = ["save-note-reply", 'form-show-request', 'notes-data-reply', 'save-note-request'];
             if (validChannels.includes(channel)) {
-                // Deliberately strip event as it includes `sender` 
-                ipcRenderer.on(channel, (event, ...args) => func(...args));
+                ipcRenderer.on(channel, data);
+            }
+        },
+        once: (channel, data) => {
+            let validChannels = ['load-file'];
+            if (validChannels.includes(channel)) {
+                ipcRenderer.once(channel, data);
             }
         }
     }

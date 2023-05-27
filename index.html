@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Мой сайт с картой мира и заметками о поездках</title>
   <meta charset="UTF-8">
+  <title>Map Form</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
@@ -12,82 +12,127 @@
      crossorigin=""></script>
   <style>
     #map {
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #form-container {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      background-color: white;
+      padding: 20px;
+      z-index: 1000;
+    }
+
+    #overlay {
+      display: none;
+      position: absolute;
       width: 100%;
-      height: 800px; /* Измените высоту, если требуется больше места */
+      height: 100%;
+      background-color: black;
+      opacity: 20%;
+      z-index: 1000;
+    }
+
+    #notes-panel {
+      position: absolute;
+      top: 0;
+      width: 500px;
+      height: 100%;
+      background-color: white;
+      box-sizing: border-box;
+      border: 1px solid black;
+      z-index: 1000;
+      transition-property: left;
+      transition-duration: 1s;
+    }
+
+    #panel-btn {
+      display: block;
+      position: absolute;
+      top: 50%;
+      right: -37px;
+      width: 35px;
+      height: 60px;
+      border-radius: 0 60px 60px 0;
+      background-color: white;
+      border: 1px solid black;
+      z-index: 1000;
+    }
+
+    #panel-btn::after {
+      content: ">";
+      position: absolute;
+      top: 35%;
+      left: 27%;
+    }
+
+    #save-btn {
+      display: none;
+      position: absolute;
+      top: 0;
+      right: 0;
+      padding: 20px 10px;
+      border-radius: 10px;
+      background-color: white;
+      border: 1px solid black;
+      z-index: 1000;
+    }
+
+    .note-delete {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+    }
+    .note-delete::after {
+      content: "x";
+    }
+
+    .note-item {
+      position: relative;
     }
   </style>
 </head>
-<body>
-  <h1>Мой сайт с картой мира и заметками о поездках</h1>
+<body style="overflow: hidden">
+  <div id="overlay"></div>
   
   <div id="map"></div>
-  
-  <h2>Мои заметки о поездках</h2>
-  <ul id="notes-list"></ul>
-  
-  <h3>Создать новую заметку</h3>
-  <form id="new-note-form">
-    <label for="note-title">Заголовок:</label>
-    <input type="text" id="note-title" required>
-    <br>
-    <label for="note-date">Дата:</label>
-    <input type="date" id="note-date" required>
-    <br>
-    <label for="note-description">Описание:</label>
-    <textarea id="note-description" required></textarea>
-    <br>
-    <button type="submit">Создать заметку</button>
-  </form>
 
-  <script src="./renderer.js"></script>
-  
-  <script>
-    function initMap() {
-      // Инициализация и настройка карты
-      var map = L.map('map').setView([55, 40], 4); // Начальные координаты карты и масштаб
-      
-      // Добавление слоя тайлов карты
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-         maxZoom: 19,
-         attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      }).addTo(map);      
-      // Добавление обработчика события для нажатия на карту
-      map.on('click', function(event) {
-        var marker = L.marker(event.latlng).addTo(map);
-        // Дополнительные действия с маркером (например, сохранение или обработка данных)
+  <div id="notes-panel" style="left: -500px">
+    <div id="panel-btn"></div>
+    <ul id="notes-list"></ul>
+  </div>
 
-        // Пример вывода координат маркера в консоль
-        console.log('Новый маркер создан на координатах: ' + event.latlng.lat + ', ' + event.latlng.lng);
-      });    }
+  <div id="save-btn">Сохранить заметки</div>
+
+  <div id="form-container">
     
-    // Добавление обработчика события для отправки формы создания заметки
-    document.getElementById('new-note-form').addEventListener('submit', function(event) {
-      event.preventDefault();
-      
-      // Получение значений полей формы
-      var title = document.getElementById('note-title').value;
-      var date = document.getElementById('note-date').value;
-      var description = document.getElementById('note-description').value;
-      
-      // Создание нового элемента списка заметок
-      var listItem = document.createElement('li');
-      
-      // Формирование текста заметки
-      var noteText = document.createElement('p');
-      noteText.innerHTML = '<strong>' + title + '</strong> - ' + date + '<br>' + description;
-      
-      // Добавление текста заметки в элемент списка
-      listItem.appendChild(noteText);
-      
-      // Добавление элемента списка в список заметок
-      document.getElementById('notes-list').appendChild(listItem);
-      
-      // Очистка полей формы
-      document.getElementById('note-title').value = '';
-      document.getElementById('note-date').value = '';
-      document.getElementById('note-description').value = '';
-    });
-    initMap()
-  </script>
+    <h2>Заметка</h2>
+    <form id="map-note">
+      <label for="date">Дата:</label>
+      <br>
+      <input type="date" id="date" required>
+      <br>
+      <label for="title">Название:</label>
+      <br>
+      <input type="text" id="title" required>
+      <br>
+      <label for="text">Описание:</label>
+      <br>
+      <textarea id="text" required rows="6" cols="30"></textarea>
+      <br>
+      <button type="submit">Сохранить</button>
+      <button type="button" id="cancel-button">Отмена</button>
+    </form>
+  </div>
+
+  <script src="renderer.js"></script>
 </body>
 </html>
