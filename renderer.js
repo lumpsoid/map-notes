@@ -1,37 +1,64 @@
 let formContainer;
+let notes = [];
+let marker;
 
 document.addEventListener('DOMContentLoaded', () => {
-  formContainer = document.getElementById('form-container');
+    formContainer = document.getElementById('form-container');
 
-  const map = L.map('map').setView([0, 0], 2);
+    const map = L.map('map').setView([0, 0], 2);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
     maxZoom: 18,
-  }).addTo(map);
+    }).addTo(map);
 
-  map.on('click', function(event) {
-    console.log('event');
-    
-    window.api.send('show-form', {x: event.originalEvent.screenX, y: event.originalEvent.screenY});
-    console.log(event);
-  });
+    map.on('click', function(event) {
+        marker = L.marker(event.latlng).addTo(map);
+        window.api.send(
+            'show-form',
+            {
+                x: event.originalEvent.screenX, 
+                y: event.originalEvent.screenY,
+                latlng: event.latlng
+            }
+        );
+    });
 });
+
+
 
 window.api.receive('form-show-request', (event, position) => {
-  formContainer.style.display = 'block';
-  formContainer.style.top = (position.y + 100) + 'px';
-  formContainer.style.left = position.x + 'px';
+    formContainer.style.display = 'block';
+    formContainer.style.top = (position.y + 150) + 'px';
+    formContainer.style.left = position.x + 'px';
+    
 });
 
-document.getElementById('map-form').addEventListener('submit', (event) => {
+document.getElementById('map-note').addEventListener('submit', (event) => {
     event.preventDefault();
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
-    console.log('Name:', name);
-    console.log('Email:', email);
+    const date = document.getElementById('date').value;
+    const name = document.getElementById('title').value;
+    const email = document.getElementById('text').value;
+    
     formContainer.style.display = 'none';
 });
+
+// Event listener for form blur (unfocus)
+document.getElementById('form-container').addEventListener('blur', () => {
+    // Perform any desired actions when the form loses focus
+    console.log('Form unfocused');
+  });
+
+// Add event listener for Cancel button
+document.getElementById('cancel-button').addEventListener('click', () => {
+    // Clear form fields
+    document.getElementById('title').value = '';
+    document.getElementById('text').value = '';
+    document.getElementById('date').value = '';
+    // Hide form container
+    formContainer.style.display = 'none';
+    marker.remove()
+  });
 
 // document.getElementById('new-note-form').addEventListener('submit', function(event) {
 //     event.preventDefault();

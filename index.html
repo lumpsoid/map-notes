@@ -34,19 +34,24 @@
 
   <div id="form-container">
     <h2>Заметка</h2>
-    <form id="map-form">
-      <label for="name">Дата:</label>
-      <input type="text" id="name" required>
+    <form id="map-note">
+      <label for="date">Дата:</label>
       <br>
-      <label for="name">Name:</label>
-      <input type="text" id="name" required>
+      <input type="date" id="date" required>
       <br>
-      <label for="email">Email:</label>
-      <input type="email" id="email" required>
+      <label for="title">Название:</label>
       <br>
-      <button type="submit">Submit</button>
+      <input type="text" id="title" required>
+      <br>
+      <label for="text">Описание:</label>
+      <br>
+      <textarea id="text" required></textarea>
+      <br>
+      <button type="submit">Сохранить</button>
+      <button type="button" id="cancel-button">Отмена</button>
     </form>
   </div>
+
 
   <script src="renderer.js"></script>
 </body>
