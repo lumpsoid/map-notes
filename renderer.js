@@ -1,20 +1,69 @@
 let formContainer;
 let formOverlay;
-let notes = [];
+let saveButton;
+let notes = {};
+let markers = {};
 let currentMarker;
+let map;
 
 
 function formCleaner() {  
     document.getElementById('title').value = '';
     document.getElementById('text').value = '';
     document.getElementById('date').value = '';
+    formContainer.removeAttribute('class');
 };
 
-function addNoteToList(noteId, newNote) {  
+function displayForm() {
+    formContainer.style.display = 'block';
+    formOverlay.style.display = 'block';
+};
+
+function noteCancel() {
+    formContainer.style.display = 'none';
+    formOverlay.style.display = 'none';
+    if (currentMarker != null && formContainer.classList.length == 0) currentMarker.remove();
+    formCleaner();
+}
+
+function onListItemClick(e) {
+    if (!e.currentTarget) {
+        return;
+    }
+
+    console.log('list item');
+    const latlng = notes[e.currentTarget.id].latlng;
+    map.flyTo(latlng, 6);
+};
+
+function onNoteDelete(e) {
+    e.stopPropagation();
+    console.log(e);
+    const parentElement = e.target.parentElement,
+    noteId = parentElement.id;
+    delete notes[noteId];
+    parentElement.remove();
+    markers[noteId].remove()
+    delete markers[noteId]
+};
+
+function addNoteToList(noteId, newNote) {
+    const note = document.getElementById(noteId)
+    if (note != null) {
+        note.querySelector('.note-title').innerHTML = newNote.title;
+        note.querySelector('.note-date').innerHTML = newNote.date;
+        note.querySelector('.note-text').innerHTML = newNote.text;
+        new window.Notification('Заметка обновлена', { body: `Обновили заметку ${newNote.title}` })
+        return;
+    }
     // Создание нового элемента списка заметок
     const listItem = document.createElement('li');
     listItem.id = noteId
     listItem.classList.add('note-item');
+
+    const iconDelete = document.createElement('div');
+    iconDelete.classList.add('note-delete');
+    iconDelete.addEventListener('click', onNoteDelete);
     
     // Формирование текста заметки
     const noteTitle = document.createElement('div');
@@ -30,21 +79,34 @@ function addNoteToList(noteId, newNote) {
     noteText.innerHTML = newNote.text;
     
     // Добавление текста заметки в элемент списка
-    listItem.append(noteDate, noteTitle, noteText);
+    listItem.append(noteDate, noteTitle, noteText, iconDelete);
+    listItem.addEventListener('click', onListItemClick);
     
     // Добавление элемента списка в список заметок
     document.getElementById('notes-list').appendChild(listItem);
+    new window.Notification('Заметка создана', { body: `Создана заметка ${title}` })
 };
 
-window.api.once('load-file', (event, jsonData) => {
-    console.log(jsonData)
-});
+
+function onMarkerClick(event) {
+    const noteId = event.target.noteId
+    const data = notes[noteId];
+    currentMarker = event.target;
+
+    displayForm()
+
+    formContainer.className = noteId;
+    document.getElementById('title').value = data.title;
+    document.getElementById('date').value = data.date;
+    document.getElementById('text').value = data.text;
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     formContainer = document.getElementById('form-container');
     formOverlay = document.getElementById('overlay');
+    saveButton = document.getElementById('save-btn');
 
-    const map = L.map('map').setView([50, 30], 4);
+    map = L.map('map').setView([50, 30], 4);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
@@ -52,29 +114,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }).addTo(map);
 
     map.on('click', function(event) {
-        currentMarker = L.marker(event.latlng).addTo(map);
-        window.api.send(
-            'show-form',
-            {
-                x: event.originalEvent.screenX, 
-                y: event.originalEvent.screenY,
-                latlng: event.latlng
-            }
-        );
+        currentMarker = L.marker(event.latlng).addTo(map).on('click', onMarkerClick);
+        
+        displayForm()
+
+        // window.api.send(
+        //     'show-form',
+        //     {
+        //         x: event.originalEvent.screenX, 
+        //         y: event.originalEvent.screenY,
+        //         latlng: event.latlng
+        //     }
+        // );
+    });
+});
+
+window.api.once('load-file', (event, jsonData) => {
+    notes = jsonData;
+    Object.keys(jsonData).map((noteId) => {
+        addNoteToList(noteId, jsonData[noteId])
+        currentMarker = L.marker(jsonData[noteId].latlng).bindTooltip(jsonData[noteId].title).addTo(map).on('click', onMarkerClick);
+        currentMarker.noteId = noteId
+        markers[noteId] = currentMarker;
     });
 });
 
 window.api.receive('form-show-request', (event, position) => {
-    formContainer.style.display = 'block';
-    formOverlay.style.display = 'block';
-    formContainer.style.top = '50%';
-    formContainer.style.left = '50%';
+    displayForm()
     // formContainer.style.top = (position.y + 150) + 'px';
     // formContainer.style.left = position.x + 'px';
     
 });
 
-document.getElementById('panel-btn').addEventListener('click', (event) => {
+document.getElementById('panel-btn').addEventListener('click', () => {
     const panel = document.getElementById('notes-panel');
     if (panel.style.left == '-500px') {
         panel.style.left = '0px'
@@ -84,21 +156,16 @@ document.getElementById('panel-btn').addEventListener('click', (event) => {
         
 });
 
-document.getElementById('overlay').addEventListener('click', (event) => {
-    formContainer.style.display = 'none';
-    formOverlay.style.display = 'none';
-    currentMarker.remove()
-    formCleaner();
-});
-
 document.getElementById('map-note').addEventListener('submit', (event) => {
     event.preventDefault();
+    
     const date = document.getElementById('date').value;
     const title = document.getElementById('title').value;
     const text = document.getElementById('text').value;
-    const timestamp = Date.now()
+    const timestamp = formContainer.className || Date.now()
     
     const note = {
+        latlng: currentMarker._latlng,
         date: date,
         title: title,
         text: text
@@ -106,30 +173,49 @@ document.getElementById('map-note').addEventListener('submit', (event) => {
 
     addNoteToList(timestamp, note);
     notes[timestamp] = note;
-    console.log(notes)
 
+    currentMarker.noteId = timestamp;
+    currentMarker.bindTooltip(title);
+
+    markers[timestamp] = currentMarker;
     formContainer.style.display = 'none';
     formOverlay.style.display = 'none';
+    saveButton.style.display = 'block';
+    currentMarker = null;
+
     formCleaner();
 });
 
-// Add event listener for Cancel button
-document.getElementById('cancel-button').addEventListener('click', () => {
-    // Clear form fields
-    formCleaner();
-    // Hide form container
-    formContainer.style.display = 'none';
-    formOverlay.style.display = 'none';
-    currentMarker.remove();
-  });
+document.getElementById('overlay').addEventListener('click', noteCancel);
 
-window.api.receive('notes-data-request', (event, content) => {
-    console.log(notes)
-    if (content.request == "request") {
-        window.api.send('notes-data', {request: 'data', data: notes});
+// Add event listener for Cancel button
+document.getElementById('cancel-button').addEventListener('click', noteCancel);
+
+document.getElementById('save-btn').addEventListener('click', () => {
+    window.api.send('notes-data', {request: 'save', data: notes});
+    saveButton.style.display = 'none'
+});
+
+window.api.receive('notes-data-reply', (event, content) => {
+    if (content.success) {
+        console.log('Заметки сохранены.')
+        new window.Notification('Заметки сохранены', { body: 'Ваши заметки были сохранены.' })
     } else {
-        console.log('Something wrong with request notes data.')
+        new window.Notification('Заметки не сохранились', { body: 'Что то пошло не так, попробуйте еще раз.' })
+        console.log('Something wrong notes-data save.')
+        console.log(content.error)
     }
+});
+
+window.api.receive('save-note-request', (event, content) => {
+    window.api.send('notes-data', {request: 'save', data: notes});
+    new window.Notification('Заметки сохранены', { body: 'Ваши заметки были сохранены.' })
+    // if (content.request) {
+    //     window.api.send('notes-data', {request: 'save', data: notes});
+    //     new window.Notification('Заметки сохранены', { body: 'Ваши заметки были сохранены.' })
+    // } else {
+    //     new window.Notification('Something wrong notes-data save.', { body: 'Something wrong notes-data save.' })
+    // }
 });
 
 

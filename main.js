@@ -27,20 +27,25 @@ function loadNotesAndSend() {
 };
 
 function saveNotes(event, content) {
+  console.log('here')
   if (content.request != "save") return;
+  console.log('or here')
   const notes = content.data;
   const notesFile = path.join(__dirname, 'notes.json')
   if (notesFile) {
       fs.writeFile(notesFile, JSON.stringify(notes), (err) => {
-          if (err) console.log(err);
+          if (err) {
+            console.log(err);
+            event.reply('notes-data-reply', { success: false, error: err });
+          } else {
+              event.reply('notes-data-reply', { success: true });
+          }
       });
   }
 }
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
     webPreferences: {
         preload: path.join(__dirname, 'preload.js')
     }
@@ -48,7 +53,7 @@ function createWindow() {
 
   mainWindow.loadFile('index.html');
 
-  mainWindow.webContents.on('did-finish-load', loadNotesAndSend); // проверено триггерится
+  mainWindow.webContents.on('did-finish-load', loadNotesAndSend);
 
   mainWindow.webContents.openDevTools();
 
@@ -70,13 +75,7 @@ ipcMain.on('show-form', (event, position) => {
   event.reply('form-show-request', position);
 });
 
-ipcMain.on('notes-data', (event, content) => {
-  if (content.request == "data") {
-    notes = content.data;
-  } else {
-    console.log('Something wrong with notes-data get.');
-  }
-});
+ipcMain.on('notes-data', saveNotes);
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit()

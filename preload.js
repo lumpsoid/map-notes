@@ -15,7 +15,7 @@ contextBridge.exposeInMainWorld(
             }
         },
         receive: (channel, data) => {
-            let validChannels = ["save-note-reply", 'form-show-request', 'notes-data-request'];
+            let validChannels = ["save-note-reply", 'form-show-request', 'notes-data-reply', 'save-note-request'];
             if (validChannels.includes(channel)) {
                 ipcRenderer.on(channel, data);
             }
