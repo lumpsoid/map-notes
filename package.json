@@ -1,4 +1,16 @@
 {
+  "config": {
+    "forge": {
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "platforms": [
+            "darwin"
+          ]
+        }
+      ]
+    }
+  },
   "name": "map-notes",
   "version": "1.0.0",
   "description": "Notes on map",
@@ -10,9 +22,13 @@
   "author": "qq",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^24.4.0"
+    "@electron-forge/cli": "^6.1.1",
+    "electron": "^24.4.0",
+    "electron-packager": "^17.1.1"
   },
   "dependencies": {
+    "@electron-forge/maker-squirrel": "^6.1.1",
+    "@electron-forge/maker-zip": "^6.1.1",
     "leaflet": "^1.9.4"
   }
 }

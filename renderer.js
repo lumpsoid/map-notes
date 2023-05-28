@@ -5,6 +5,12 @@ let notes = {};
 let markers = {};
 let currentMarker;
 let map;
+const myIcon = L.icon({
+    iconUrl: 'marker.svg',
+    iconSize: [38, 95],
+    iconAnchor: [20, 60],
+    tooltipAnchor: [10, -23]
+});
 
 
 function formCleaner() {  
@@ -31,24 +37,30 @@ function onListItemClick(e) {
         return;
     }
 
-    console.log('list item');
     const latlng = notes[e.currentTarget.id].latlng;
-    map.flyTo(latlng, 6);
+    map.flyTo([latlng.lat, latlng.lng-4], 6);
+    markers[e.currentTarget.id].openTooltip()
 };
 
 function onNoteDelete(e) {
     e.stopPropagation();
-    console.log(e);
-    const parentElement = e.target.parentElement,
-    noteId = parentElement.id;
+
+    const
+        parentElement = e.currentTarget.parentElement,
+        noteId = parentElement.id;
+        
     delete notes[noteId];
+    
     parentElement.remove();
+
     markers[noteId].remove()
     delete markers[noteId]
+    saveButton.style.display = 'block';
 };
 
 function addNoteToList(noteId, newNote) {
-    const note = document.getElementById(noteId)
+    const note = document.getElementById(noteId);
+
     if (note != null) {
         note.querySelector('.note-title').innerHTML = newNote.title;
         note.querySelector('.note-date').innerHTML = newNote.date;
@@ -56,13 +68,16 @@ function addNoteToList(noteId, newNote) {
         new window.Notification('Заметка обновлена', { body: `Обновили заметку ${newNote.title}` })
         return;
     }
+
     // Создание нового элемента списка заметок
     const listItem = document.createElement('li');
     listItem.id = noteId
     listItem.classList.add('note-item');
 
     const iconDelete = document.createElement('div');
+
     iconDelete.classList.add('note-delete');
+    iconDelete.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="delete-icon" viewBox="0 0 512 512"><path d="M112 112l20 320c.95 18.49 14.4 32 32 32h184c17.67 0 30.87-13.51 32-32l20-320" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="32" d="M80 112h352"/><path d="M192 112V72h0a23.93 23.93 0 0124-24h80a23.93 23.93 0 0124 24h0v40M256 176v224M184 176l8 224M328 176l-8 224" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/></svg>';
     iconDelete.addEventListener('click', onNoteDelete);
     
     // Формирование текста заметки
@@ -79,7 +94,7 @@ function addNoteToList(noteId, newNote) {
     noteText.innerHTML = newNote.text;
     
     // Добавление текста заметки в элемент списка
-    listItem.append(noteDate, noteTitle, noteText, iconDelete);
+    listItem.append(noteTitle, noteDate, noteText, iconDelete);
     listItem.addEventListener('click', onListItemClick);
     
     // Добавление элемента списка в список заметок
@@ -114,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).addTo(map);
 
     map.on('click', function(event) {
-        currentMarker = L.marker(event.latlng).addTo(map).on('click', onMarkerClick);
+        currentMarker = L.marker(event.latlng, {icon: myIcon}).addTo(map).on('click', onMarkerClick);
         
         displayForm()
 
@@ -133,7 +148,7 @@ window.api.once('load-file', (event, jsonData) => {
     notes = jsonData;
     Object.keys(jsonData).map((noteId) => {
         addNoteToList(noteId, jsonData[noteId])
-        currentMarker = L.marker(jsonData[noteId].latlng).bindTooltip(jsonData[noteId].title).addTo(map).on('click', onMarkerClick);
+        currentMarker = L.marker(jsonData[noteId].latlng, {icon: myIcon}).bindTooltip(jsonData[noteId].title).addTo(map).on('click', onMarkerClick);
         currentMarker.noteId = noteId
         markers[noteId] = currentMarker;
     });
@@ -147,11 +162,17 @@ window.api.receive('form-show-request', (event, position) => {
 });
 
 document.getElementById('panel-btn').addEventListener('click', () => {
-    const panel = document.getElementById('notes-panel');
+    const
+        panel = document.getElementById('notes-panel'),
+        panelBtn = document.getElementById('panel-btn');
+
     if (panel.style.left == '-500px') {
-        panel.style.left = '0px'
+        panel.style.left = '0px';
+        panelBtn.style.left = '500px';
+
     } else {
         panel.style.left = '-500px'
+        panelBtn.style.left = '0px';
     }   
         
 });
@@ -200,6 +221,7 @@ window.api.receive('notes-data-reply', (event, content) => {
     if (content.success) {
         console.log('Заметки сохранены.')
         new window.Notification('Заметки сохранены', { body: 'Ваши заметки были сохранены.' })
+        
     } else {
         new window.Notification('Заметки не сохранились', { body: 'Что то пошло не так, попробуйте еще раз.' })
         console.log('Something wrong notes-data save.')
@@ -217,32 +239,3 @@ window.api.receive('save-note-request', (event, content) => {
     //     new window.Notification('Something wrong notes-data save.', { body: 'Something wrong notes-data save.' })
     // }
 });
-
-
-// document.getElementById('new-note-form').addEventListener('submit', function(event) {
-//     event.preventDefault();
-
-//     const title = document.getElementById('note-title').value;
-//     const date = document.getElementById('note-date').value;
-//     const description = document.getElementById('note-description').value;
-
-//     const note = {
-//         title,
-//         date,
-//         description
-//     };
-//     console.log(note);
-
-//     window.api.send("save-note", note);
-// });
-
-
-// window.api.receive('save-note-reply', (response) => {
-//     if (response.success) {
-//         console.log('Заметка успешно сохранена');
-//         // Дополнительные действия при успешном сохранении заметки
-//     } else {
-//         console.error('Ошибка при сохранении заметки', response.error);
-//         // Дополнительные действия при ошибке сохранения заметки
-//     }
-// });

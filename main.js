@@ -2,6 +2,9 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path')
 
+// run this as early in the main process as possible
+// if (require('electron-squirrel-startup')) app.quit();
+
 let mainWindow;
 
 function loadNotesAndSend() {
@@ -27,9 +30,8 @@ function loadNotesAndSend() {
 };
 
 function saveNotes(event, content) {
-  console.log('here')
   if (content.request != "save") return;
-  console.log('or here')
+
   const notes = content.data;
   const notesFile = path.join(__dirname, 'notes.json')
   if (notesFile) {

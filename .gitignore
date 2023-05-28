@@ -1,4 +1,5 @@
 .vscode
+out
 node_modules
 notes.json
 package-lock.json
