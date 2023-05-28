@@ -58,7 +58,7 @@ function onNoteDelete(e) {
     saveButton.style.display = 'block';
 };
 
-function addNoteToList(noteId, newNote) {
+function addNoteToList(noteId, newNote, mute=0) {
     const note = document.getElementById(noteId);
 
     if (note != null) {
@@ -99,7 +99,7 @@ function addNoteToList(noteId, newNote) {
     
     // Добавление элемента списка в список заметок
     document.getElementById('notes-list').appendChild(listItem);
-    new window.Notification('Заметка создана', { body: `Создана заметка ${title}` })
+    if (!mute) new window.Notification('Заметка создана', { body: `Создана заметка ${title}` })
 };
 
 
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
 window.api.once('load-file', (event, jsonData) => {
     notes = jsonData;
     Object.keys(jsonData).map((noteId) => {
-        addNoteToList(noteId, jsonData[noteId])
+        addNoteToList(noteId, jsonData[noteId], 1)
         currentMarker = L.marker(jsonData[noteId].latlng, {icon: myIcon}).bindTooltip(jsonData[noteId].title).addTo(map).on('click', onMarkerClick);
         currentMarker.noteId = noteId
         markers[noteId] = currentMarker;

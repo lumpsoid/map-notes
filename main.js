@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const fs = require('fs');
 const path = require('path')
 
@@ -48,6 +48,8 @@ function saveNotes(event, content) {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
+    height: 1080,
+    width: 1920,
     webPreferences: {
         preload: path.join(__dirname, 'preload.js')
     }
@@ -56,8 +58,6 @@ function createWindow() {
   mainWindow.loadFile('index.html');
 
   mainWindow.webContents.on('did-finish-load', loadNotesAndSend);
-
-  mainWindow.webContents.openDevTools();
 
   mainWindow.on('closed', () => {
     mainWindow = null;
