@@ -111,26 +111,31 @@ form button {
     position: absolute;
     /* width: 160px;
     height: 100px; */
-    background-color: white;
-    border-radius: 75px;
+    border-radius: 32px;
     margin-bottom: 20px;
     /* padding: 12px 0; */
     /* outline: 2px solid #c1b1ff; */
-    border: 2px solid #7055d9;
-    background-color: #9f93cf;
+    border: 2px solid #c1b1ff;
+    overflow: hidden;
+    background: linear-gradient(to left, rgb(244 241 251), rgb(250 243 255));
     z-index: 1002;
 }
 
 .context-menu-item {
     cursor: pointer;
     text-align: center;
-    padding: 14px 20px 14px;
-    color: white;
-    font-weight: bold;
+    padding: 7px 19px 7px;
+    color: black;
+    user-select: none;
 }
 
 #context-panel-open {
-    border-bottom: 2px solid #7055d9;
+    border-bottom: 2px solid #c1b1ff;
+}
+
+.context-menu-item:hover {
+    background: #c1b1ff;
+    transition: background-color 0.3s ease;
 }
 
 #notes-panel {
