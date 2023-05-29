@@ -1,8 +1,10 @@
+let notes = {};
+let markers = {};
 let formContainer;
 let formOverlay;
 let saveButton;
-let notes = {};
-let markers = {};
+let markerContextMenu;
+let notesPanel;
 let currentMarker;
 let map;
 const myIcon = L.icon({
@@ -25,11 +27,25 @@ function displayForm() {
     formOverlay.style.display = 'block';
 };
 
-function noteCancel() {
-    formContainer.style.display = 'none';
+function contextMenuClose() {
+    markerContextMenu.style.display = 'none';
     formOverlay.style.display = 'none';
-    if (currentMarker != null && formContainer.classList.length == 0) currentMarker.remove();
-    formCleaner();
+    formOverlay.style.backgroundColor = 'black';
+    markerContextMenu.removeAttribute('data-note-id')
+}
+
+function onOverlayClick() {
+    if (formContainer.style.display == 'block') {
+        formContainer.style.display = 'none';
+        formOverlay.style.display = 'none';
+        if (currentMarker != null && !formContainer.getAttribute('data-note-id')) currentMarker.remove();
+        formCleaner();
+        formContainer.removeAttribute('data-note-id')
+    }
+
+    if (markerContextMenu.style.display == 'block') {
+        contextMenuClose()
+    }    
 }
 
 function onListItemClick(e) {
@@ -37,29 +53,52 @@ function onListItemClick(e) {
         return;
     }
 
-    const latlng = notes[e.currentTarget.id].latlng;
+    const noteId = e.currentTarget.getAttribute('data-note-id');
+
+    const latlng = notes[noteId].latlng;
     map.flyTo([latlng.lat, latlng.lng-0.3], 10);
-    markers[e.currentTarget.id].openTooltip()
+    markers[noteId].openTooltip()
+};
+
+function onNoteEdit(e) {
+    e.stopPropagation();
+
+    const
+        parentElement = e.currentTarget.parentElement,
+        noteId = parentElement.getAttribute('data-note-id');
+        data = notes[noteId];
+    
+    currentMarker = markers[noteId];
+
+    displayForm()
+    formContainer.setAttribute('data-note-id', noteId);
+    document.getElementById('title').value = data.title;
+    document.getElementById('date').value = data.date;
+    document.getElementById('text').value = data.text;
 };
 
 function onNoteDelete(e) {
     e.stopPropagation();
 
     const
-        parentElement = e.currentTarget.parentElement,
-        noteId = parentElement.id;
-        
+        noteId = e.currentTarget.parentElement.getAttribute('data-note-id'),
+        note = notesPanel.querySelector(`[data-note-id="${noteId}"]`);
+    console.log(note);
     delete notes[noteId];
     
-    parentElement.remove();
+    note.remove();
 
     markers[noteId].remove()
     delete markers[noteId]
     saveButton.style.display = 'block';
+    
+    if (markerContextMenu.style.display == 'block') {
+        contextMenuClose()
+    }
 };
 
 function addNoteToList(noteId, newNote, mute=0) {
-    const note = document.getElementById(noteId);
+    const note = notesPanel.querySelector(`[data-note-id="${noteId}"]`);
 
     if (note != null) {
         note.querySelector('.note-title').innerHTML = newNote.title;
@@ -71,7 +110,7 @@ function addNoteToList(noteId, newNote, mute=0) {
 
     // Создание нового элемента списка заметок
     const listItem = document.createElement('li');
-    listItem.id = noteId
+    listItem.setAttribute('data-note-id', noteId);
     listItem.classList.add('note-item');
 
     const iconDelete = document.createElement('div');
@@ -106,6 +145,33 @@ function addNoteToList(noteId, newNote, mute=0) {
     if (!mute) new window.Notification('Заметка создана', { body: `Создана заметка ${title}` })
 };
 
+function focusOnNote(event) {
+    const 
+        noteId = event.currentTarget.parentElement.getAttribute('data-note-id'),
+        note = notesPanel.querySelector(`[data-note-id="${noteId}"]`),
+        overlay = document.getElementById('notes-overlay');
+
+
+    if (notesPanel.style.left == '-500px') {
+        panelOpen()
+    }
+    const offsetTop = note.offsetTop - 20;
+    notesPanel.scrollTop = offsetTop;
+    
+    overlay.style.display = 'block'
+    overlay.style.opacity = '20%'
+    note.style.zIndex = '1011'
+
+    setTimeout(() => {
+        overlay.style.display = 'none'
+        note.style.zIndex = '1000'
+        overlay.style.opacity = '0%'
+    }, 1500);
+
+    if (markerContextMenu.style.display == 'block') {
+        contextMenuClose()
+    }
+}
 
 function onMarkerClick(event) {
     const noteId = event.target.noteId
@@ -114,33 +180,32 @@ function onMarkerClick(event) {
 
     displayForm()
 
-    formContainer.className = noteId;
+    formContainer.setAttribute('data-note-id', noteId);
     document.getElementById('title').value = data.title;
     document.getElementById('date').value = data.date;
     document.getElementById('text').value = data.text;
 };
 
-function onNoteEdit(e) {
-    e.stopPropagation();
-
-    const
-        parentElement = e.currentTarget.parentElement,
-        noteId = parentElement.id;
-        data = notes[noteId];
+function onMarkerRightClick(event) {
+    const 
+        position = event.containerPoint
+        noteId = event.target.noteId
     
-    currentMarker = markers[noteId];
-
-    displayForm()
-    formContainer.className = noteId;
-    document.getElementById('title').value = data.title;
-    document.getElementById('date').value = data.date;
-    document.getElementById('text').value = data.text;
+    markerContextMenu.setAttribute('data-note-id', noteId);
+    markerContextMenu.style.top = position.y + 'px';
+    markerContextMenu.style.left = (position.x + 10) + 'px';
+    
+    formOverlay.style.backgroundColor = 'transparent';
+    formOverlay.style.display = 'block'
+    markerContextMenu.style.display = 'block'
 };
 
 document.addEventListener('DOMContentLoaded', () => {
     formContainer = document.getElementById('form-container');
     formOverlay = document.getElementById('overlay');
     saveButton = document.getElementById('save-btn');
+    markerContextMenu = document.getElementById('context-menu');
+    notesPanel = document.getElementById('notes-panel')
 
     map = L.map('map').setView([50, 30], 4);
 
@@ -150,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).addTo(map);
 
     map.on('click', function(event) {
-        currentMarker = L.marker(event.latlng, {icon: myIcon}).addTo(map).on('click', onMarkerClick);
+        currentMarker = L.marker(event.latlng, {icon: myIcon}).addTo(map).on('click', onMarkerClick).on('contextmenu', onMarkerRightClick);
         
         displayForm()
 
@@ -169,7 +234,7 @@ window.api.once('load-file', (event, jsonData) => {
     notes = jsonData;
     Object.keys(jsonData).map((noteId) => {
         addNoteToList(noteId, jsonData[noteId], 1)
-        currentMarker = L.marker(jsonData[noteId].latlng, {icon: myIcon}).bindTooltip(jsonData[noteId].title).addTo(map).on('click', onMarkerClick);
+        currentMarker = L.marker(jsonData[noteId].latlng, {icon: myIcon}).bindTooltip(jsonData[noteId].title).addTo(map).on('click', onMarkerClick).on('contextmenu', onMarkerRightClick);
         currentMarker.noteId = noteId
         markers[noteId] = currentMarker;
     });
@@ -182,21 +247,18 @@ window.api.receive('form-show-request', (event, position) => {
     
 });
 
-document.getElementById('panel-btn').addEventListener('click', () => {
-    const
-        panel = document.getElementById('notes-panel'),
-        panelBtn = document.getElementById('panel-btn');
+function panelOpen() {
+    const panelBtn = document.getElementById('panel-btn');
 
-    if (panel.style.left == '-500px') {
-        panel.style.left = '0px';
+    if (notesPanel.style.left == '-500px') {
+        notesPanel.style.left = '0px';
         panelBtn.style.left = '500px';
 
     } else {
-        panel.style.left = '-500px'
+        notesPanel.style.left = '-500px'
         panelBtn.style.left = '0px';
     }   
-        
-});
+}
 
 document.getElementById('map-note').addEventListener('submit', (event) => {
     event.preventDefault();
@@ -204,8 +266,8 @@ document.getElementById('map-note').addEventListener('submit', (event) => {
     const date = document.getElementById('date').value;
     const title = document.getElementById('title').value;
     const text = document.getElementById('text').value;
-    const timestamp = formContainer.className || Date.now()
-    
+    const timestamp = formContainer.getAttribute('data-note-id') || Date.now()
+    console.log(timestamp);
     const note = {
         latlng: currentMarker._latlng,
         date: date,
@@ -228,11 +290,11 @@ document.getElementById('map-note').addEventListener('submit', (event) => {
     formCleaner();
 });
 
-document.getElementById('overlay').addEventListener('click', noteCancel);
-
-// Add event listener for Cancel button
-document.getElementById('cancel-button').addEventListener('click', noteCancel);
-
+document.getElementById('overlay').addEventListener('click', onOverlayClick);
+document.getElementById('context-note-delete').addEventListener('click', onNoteDelete);
+document.getElementById('context-panel-open').addEventListener('click', focusOnNote);
+document.getElementById('panel-btn').addEventListener('click', panelOpen);
+document.getElementById('cancel-button').addEventListener('click', onOverlayClick);
 document.getElementById('save-btn').addEventListener('click', () => {
     window.api.send('notes-data', {request: 'save', data: notes});
     saveButton.style.display = 'none'

@@ -1,11 +1,29 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const fs = require('fs');
+const sharp = require('sharp');
 const path = require('path')
 
 // run this as early in the main process as possible
 // if (require('electron-squirrel-startup')) app.quit();
 
 let mainWindow;
+
+function pathChecker() {
+
+}
+
+
+// https://sharp.pixelplumbing.com/
+async function loadImage() {
+  if (!pathChecker) console.log('Path not available.')
+  const inputPath = dialog.showOpenDialogSync(mainWindow, options)
+  try {
+    await sharp(inputPath).avif().toFile(outputPath);
+    console.log('Image converted to AVIF successfully!');
+  } catch (error) {
+    console.error('Error converting image to AVIF:', error);
+  }
+}
 
 function loadNotesAndSend() {
   const notesFile = path.join(__dirname, 'notes.json')

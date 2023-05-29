@@ -16,7 +16,8 @@
     "electron-builder": "^24.4.0"
   },
   "dependencies": {
-    "leaflet": "github:Leaflet/Leaflet"
+    "leaflet": "github:Leaflet/Leaflet",
+    "sharp": "^0.32.1"
   },
   "build": {
     "productName": "map-notes",
@@ -25,11 +26,6 @@
       "target": [
         "portable"
       ]
-    },
-    "directories": {
-      "output": "electron/output",
-      "app": "electron/app",
-      "buildResources": "electron/buildResources"
     }
   }
 }
