@@ -38,7 +38,7 @@ function onListItemClick(e) {
     }
 
     const latlng = notes[e.currentTarget.id].latlng;
-    map.flyTo([latlng.lat, latlng.lng-4], 6);
+    map.flyTo([latlng.lat, latlng.lng-0.3], 10);
     markers[e.currentTarget.id].openTooltip()
 };
 
@@ -75,10 +75,14 @@ function addNoteToList(noteId, newNote, mute=0) {
     listItem.classList.add('note-item');
 
     const iconDelete = document.createElement('div');
-
     iconDelete.classList.add('note-delete');
-    iconDelete.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="delete-icon" viewBox="0 0 512 512"><path d="M112 112l20 320c.95 18.49 14.4 32 32 32h184c17.67 0 30.87-13.51 32-32l20-320" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="32" d="M80 112h352"/><path d="M192 112V72h0a23.93 23.93 0 0124-24h80a23.93 23.93 0 0124 24h0v40M256 176v224M184 176l8 224M328 176l-8 224" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/></svg>';
+    iconDelete.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M112 112l20 320c.95 18.49 14.4 32 32 32h184c17.67 0 30.87-13.51 32-32l20-320" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="32" d="M80 112h352"/><path d="M192 112V72h0a23.93 23.93 0 0124-24h80a23.93 23.93 0 0124 24h0v40M256 176v224M184 176l8 224M328 176l-8 224" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/></svg>';
     iconDelete.addEventListener('click', onNoteDelete);
+
+    const iconEdit = document.createElement('div');
+    iconEdit.classList.add('note-edit');
+    iconEdit.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+    iconEdit.addEventListener('click', onNoteEdit);
     
     // Формирование текста заметки
     const noteTitle = document.createElement('div');
@@ -94,7 +98,7 @@ function addNoteToList(noteId, newNote, mute=0) {
     noteText.innerHTML = newNote.text;
     
     // Добавление текста заметки в элемент списка
-    listItem.append(noteTitle, noteDate, noteText, iconDelete);
+    listItem.append(noteTitle, noteDate, noteText, iconDelete, iconEdit);
     listItem.addEventListener('click', onListItemClick);
     
     // Добавление элемента списка в список заметок
@@ -110,6 +114,23 @@ function onMarkerClick(event) {
 
     displayForm()
 
+    formContainer.className = noteId;
+    document.getElementById('title').value = data.title;
+    document.getElementById('date').value = data.date;
+    document.getElementById('text').value = data.text;
+};
+
+function onNoteEdit(e) {
+    e.stopPropagation();
+
+    const
+        parentElement = e.currentTarget.parentElement,
+        noteId = parentElement.id;
+        data = notes[noteId];
+    
+    currentMarker = markers[noteId];
+
+    displayForm()
     formContainer.className = noteId;
     document.getElementById('title').value = data.title;
     document.getElementById('date').value = data.date;
