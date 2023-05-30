@@ -142,7 +142,7 @@ function addNoteToList(noteId, newNote, mute=0) {
     
     // Добавление элемента списка в список заметок
     document.getElementById('notes-list').appendChild(listItem);
-    if (!mute) new window.Notification('Заметка создана', { body: `Создана заметка ${title}` })
+    if (!mute) new window.Notification('Заметка создана', { body: `Создана заметка ${newNote.title}` })
 };
 
 function focusOnNote(event) {

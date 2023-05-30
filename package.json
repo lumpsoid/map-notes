@@ -1,6 +1,6 @@
 {
   "name": "map-notes",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Notes on map",
   "main": "main.js",
   "scripts": {
@@ -16,12 +16,14 @@
     "electron-builder": "^24.4.0"
   },
   "dependencies": {
-    "leaflet": "github:Leaflet/Leaflet",
-    "sharp": "^0.32.1"
+    "leaflet": "github:Leaflet/Leaflet"
   },
   "build": {
     "productName": "map-notes",
     "appId": "test.map-notes",
+    "files": [
+      "!**/notes.json"
+    ],
     "win": {
       "target": [
         "portable"
