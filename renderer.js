@@ -328,12 +328,15 @@ document.getElementById('save-btn').addEventListener('click', () => {
 document.getElementById('settings-file-input').addEventListener('change', (event) => {
     try {
         const newPathToNotes = event.target.files[0].path
-
-        Object.entries(notes).forEach(function([key, value]) {
-            noteId = key;
-            notesPanel.querySelector(`[data-note-id="${noteId}"]`).remove();
-            markers[noteId].remove()
-          });
+        
+        for (let key in notes) {
+            if (notes.hasOwnProperty(key)) {
+                // key is noteId
+                notesPanel.querySelector(`[data-note-id="${key}"]`).remove();
+                markers[key].remove()
+            }
+        }
+        
         notes = {};
         markers = {};
 
