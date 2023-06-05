@@ -1,6 +1,6 @@
 {
   "name": "map-notes",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Notes on map",
   "main": "main.js",
   "scripts": {

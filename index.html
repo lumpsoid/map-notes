@@ -50,6 +50,14 @@
     <div id="context-panel-open" class="context-menu-item">Показать в списке</div>
     <div id="context-note-delete" class="context-menu-item">Удалить заметку</div>
   </div>
+
+  <div id="settings-icon"><img src="./settings.svg" style="display: block; height: 40px; width: 40px;"></div>
+  <div id="settings-block" style="display: none;">
+    <div id="settings-file" class="settings-item">Файл заметок:</div>
+    <p id="settings-file-path" class="settings-item"></p>
+    <label id="settings-label-file" for="settings-file-input">Изменить</label>
+    <input type="file" accept=".txt, .json" id="settings-file-input" class="settings-item">
+  </div>
   <script src="renderer.js"></script>
 </body>
 </html>

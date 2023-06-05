@@ -45,7 +45,13 @@ function onOverlayClick() {
 
     if (markerContextMenu.style.display == 'block') {
         contextMenuClose()
-    }    
+    }
+    
+    if (document.getElementById('settings-icon').style.display == 'none') {
+        document.getElementById('settings-icon').style.display = 'block'
+        document.getElementById('settings-block').style.display = 'none'
+        formOverlay.style.display = 'none';
+    }
 }
 
 function onListItemClick(e) {
@@ -83,7 +89,7 @@ function onNoteDelete(e) {
     const
         noteId = e.currentTarget.parentElement.getAttribute('data-note-id'),
         note = notesPanel.querySelector(`[data-note-id="${noteId}"]`);
-    console.log(note);
+    
     delete notes[noteId];
     
     note.remove();
@@ -200,6 +206,18 @@ function onMarkerRightClick(event) {
     markerContextMenu.style.display = 'block'
 };
 
+function onMarkerMoveEnd(event) {
+    const 
+        newLatlng = event.target._latlng,
+        noteId = event.target.noteId;
+    let note = notes[noteId];
+    
+    note.latlng = newLatlng;
+    notes[noteId] = note;
+    markers[noteId] = event.target;
+    saveButton.style.display = 'block';
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     formContainer = document.getElementById('form-container');
     formOverlay = document.getElementById('overlay');
@@ -215,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).addTo(map);
 
     map.on('click', function(event) {
-        currentMarker = L.marker(event.latlng, {icon: myIcon}).addTo(map).on('click', onMarkerClick).on('contextmenu', onMarkerRightClick);
+        currentMarker = L.marker(event.latlng, {icon: myIcon, draggable: true}).addTo(map).on('click', onMarkerClick).on('contextmenu', onMarkerRightClick).on('moveend', onMarkerMoveEnd);
         
         displayForm()
 
@@ -230,11 +248,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-window.api.once('load-file', (event, jsonData) => {
+window.api.receive('load-file', (event, jsonData) => {
     notes = jsonData;
     Object.keys(jsonData).map((noteId) => {
         addNoteToList(noteId, jsonData[noteId], 1)
-        currentMarker = L.marker(jsonData[noteId].latlng, {icon: myIcon}).bindTooltip(jsonData[noteId].title).addTo(map).on('click', onMarkerClick).on('contextmenu', onMarkerRightClick);
+        currentMarker = L.marker(jsonData[noteId].latlng, {icon: myIcon, draggable: true}).bindTooltip(jsonData[noteId].title).addTo(map).on('click', onMarkerClick).on('contextmenu', onMarkerRightClick).on('moveend', onMarkerMoveEnd);
         currentMarker.noteId = noteId
         markers[noteId] = currentMarker;
     });
@@ -267,7 +285,7 @@ document.getElementById('map-note').addEventListener('submit', (event) => {
     const title = document.getElementById('title').value;
     const text = document.getElementById('text').value;
     const timestamp = formContainer.getAttribute('data-note-id') || Date.now()
-    console.log(timestamp);
+    
     const note = {
         latlng: currentMarker._latlng,
         date: date,
@@ -290,6 +308,14 @@ document.getElementById('map-note').addEventListener('submit', (event) => {
     formCleaner();
 });
 
+function onSettingsClick() {
+    document.getElementById('settings-icon').style.display = 'none'
+    formOverlay.style.display = 'block'
+    document.getElementById('settings-block').style.display = 'block'
+
+};
+
+document.getElementById('settings-icon').addEventListener('click', onSettingsClick);
 document.getElementById('overlay').addEventListener('click', onOverlayClick);
 document.getElementById('context-note-delete').addEventListener('click', onNoteDelete);
 document.getElementById('context-panel-open').addEventListener('click', focusOnNote);
@@ -298,6 +324,23 @@ document.getElementById('cancel-button').addEventListener('click', onOverlayClic
 document.getElementById('save-btn').addEventListener('click', () => {
     window.api.send('notes-data', {request: 'save', data: notes});
     saveButton.style.display = 'none'
+});
+document.getElementById('settings-file-input').addEventListener('change', (event) => {
+    try {
+        const newPathToNotes = event.target.files[0].path
+
+        Object.entries(notes).forEach(function([key, value]) {
+            noteId = key;
+            notesPanel.querySelector(`[data-note-id="${noteId}"]`).remove();
+            markers[noteId].remove()
+          });
+        notes = {};
+        markers = {};
+
+        window.api.send('send-path-to-notes', newPathToNotes);
+    } catch (err) {
+        console.error(err);
+    }
 });
 
 window.api.receive('notes-data-reply', (event, content) => {
@@ -321,4 +364,22 @@ window.api.receive('save-note-request', (event, content) => {
     // } else {
     //     new window.Notification('Something wrong notes-data save.', { body: 'Something wrong notes-data save.' })
     // }
+});
+
+
+function extractFilename(path) {
+    if (path.substr(0, 12) == "C:\\fakepath\\")
+      return path.substr(12); // modern browser
+    var x;
+    x = path.lastIndexOf('/');
+    if (x >= 0) // Unix-based path
+      return path.substr(x+1);
+    x = path.lastIndexOf('\\');
+    if (x >= 0) // Windows-based path
+      return path.substr(x+1);
+    return path; // just the filename
+  }
+
+window.api.receive('get-path-to-notes', (event, pathToNotes) => {
+    document.getElementById('settings-file-path').innerHTML = pathToNotes;
 });

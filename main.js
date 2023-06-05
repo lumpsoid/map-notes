@@ -1,4 +1,5 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { log } = require('console');
+const { app, BrowserWindow, ipcMain, dialog, Notification } = require('electron');
 const fs = require('fs');
 // const sharp = require('sharp');
 const path = require('path')
@@ -9,8 +10,6 @@ let configData = {};
 
 // Функция сохранения файла конфигурации
 function saveConfig() {
-  console.log('save config func');
-  console.log(configPath);
   fs.writeFile(configPath, JSON.stringify(configData), (err) => {
     if (err) {
       console.error('Ошибка при сохранении файла конфигурации:', err);
@@ -26,8 +25,14 @@ function loadConfig() {
     if (err) {
       console.error('Ошибка при загрузке файла конфигурации:', err);
     } else {
-      configData = JSON.parse(data);
-      console.log('Файл конфигурации успешно загружен.');
+      
+      try {
+        configData = JSON.parse(data);
+        console.log('Файл конфигурации успешно загружен.');
+      } catch (err) {
+        // Обработка ошибки парсинга JSON
+        console.error(err);
+      }
     }
   });
 }
@@ -35,11 +40,9 @@ function loadConfig() {
 // run this as early in the main process as possible
 // if (require('electron-squirrel-startup')) app.quit();
 
-function pathChecker() {
+// function pathChecker() {
 
-}
-
-
+// }
 // // https://sharp.pixelplumbing.com/
 // async function loadImage() {
 //   if (!pathChecker) console.log('Path not available.')
@@ -52,36 +55,58 @@ function pathChecker() {
 //   }
 // }
 
-function loadNotesAndSend() {
-  if (!configData["pathToNotes"]) {
-    const choosenFile = dialog.showOpenDialogSync(mainWindow, {
-      buttonLabel: 'Выбрать файл',
-      filters: [
-        { name: 'Заметки', extensions: ['json', 'txt'] }
-      ],
-      properties: ['openFile'],
-      title: 'Выберите файл c заметками'
-    })
-    if (choosenFile) {
-      configData["pathToNotes"] = choosenFile[0]
-    }
-  }
-  if (!configData["pathToNotes"]) {
+function chooseNoteFile() {
+  // если конфиг пустой, то выбрать файл
+  const choosenFile = dialog.showOpenDialogSync(mainWindow, {
+    buttonLabel: 'Выбрать файл',
+    filters: [
+      { name: 'txt', extensions: ['txt'] }
+    ],
+    properties: ['openFile', 'promptToCreate'],
+    title: 'Выберите файл c заметками'
+  });
+  // если файл выбран, то добавить его в конфиг
+  if (choosenFile) {
+    configData["pathToNotes"] = choosenFile[0];
+  } else {
+    // если файл не был выбран, то открыть сообщение о том, что приложение закрывается
     dialog.showMessageBoxSync({
       type: 'info',
       title: 'Alert',
       message: 'Путь к заметкам не был предоставлен. Приложение будет закрыто.',
       buttons: ['OK']
     });
-    app.quit()
+    app.quit();
+  }
+};
+
+function loadNotesAndSend() {
+  if (!configData["pathToNotes"]) {
+    chooseNoteFile()
   } else {
+    fs.access(configData["pathToNotes"], fs.constants.F_OK, (err) => {
+      if (err) {
+        console.error('Файл не существует');
+        configData["pathToNotes"] = undefined;
+        chooseNoteFile()
+      } else {
+        console.log('Файл существует');
+      }
+    });
+  }
+  
+  if (configData["pathToNotes"]) {
+    console.log(configData["pathToNotes"]);
+    mainWindow.webContents.send('get-path-to-notes', configData["pathToNotes"]);
+
+    // в случае улспешной записи пути до файла в конфиг, загрузить этот файл
     fs.readFile(configData["pathToNotes"], 'utf-8', (err, data) => {
       if (err) {
         // Обработка ошибки чтения файла
         console.error(err);
         return;
       }
-  
+
       try {
         const jsonData = JSON.parse(data);
         
@@ -92,7 +117,7 @@ function loadNotesAndSend() {
         console.error(err);
       }
     });
-  }
+  };
 };
 
 function saveNotes(event, content) {
@@ -121,12 +146,12 @@ function createWindow() {
     }
   });
 
-  loadConfig()
+  loadConfig();
   mainWindow.loadFile('index.html');
   mainWindow.webContents.on('did-finish-load', loadNotesAndSend);
 
   mainWindow.on('close', function () {
-    saveConfig()
+    saveConfig();
   })
 
   mainWindow.on('closed', () => {
@@ -136,13 +161,13 @@ function createWindow() {
 
 app.whenReady().then(() => {
 
-  createWindow()
+  createWindow();
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
+  });
 
-})
+});
 
 ipcMain.on('show-form', (event, position) => {
   event.reply('form-show-request', position);
@@ -150,6 +175,16 @@ ipcMain.on('show-form', (event, position) => {
 
 ipcMain.on('notes-data', saveNotes);
 
+ipcMain.on('send-path-to-notes', (event, newPathToNotes) => {
+  configData["pathToNotes"] = newPathToNotes;
+  loadNotesAndSend()
+  new Notification({
+    title: 'Файл был загружен',
+    body: `Файл ${newPathToNotes} был загружен.`
+  }).show();
+  
+});
+
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit()
-})
+});
